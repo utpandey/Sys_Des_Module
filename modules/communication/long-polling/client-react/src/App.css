@@ -1,0 +1,162 @@
+.container {
+  max-width: 800px;
+  margin: 0 auto;
+}
+
+h1 {
+  color: #4a9eff;
+  margin-bottom: 10px;
+}
+
+.subtitle {
+  color: #888;
+  margin-bottom: 30px;
+}
+
+.controls {
+  background: #2a2a2a;
+  padding: 20px;
+  border-radius: 8px;
+  margin-bottom: 20px;
+}
+
+.control-group {
+  margin-bottom: 15px;
+}
+
+label {
+  display: block;
+  margin-bottom: 5px;
+  color: #ccc;
+}
+
+input[type="number"] {
+  width: 100px;
+  padding: 8px;
+  background: #1a1a1a;
+  border: 1px solid #444;
+  border-radius: 4px;
+  color: #e0e0e0;
+}
+
+input[type="number"]:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+button {
+  padding: 10px 20px;
+  background: #4a9eff;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 14px;
+  margin-right: 10px;
+  transition: background 0.2s;
+}
+
+button:hover:not(:disabled) {
+  background: #3a8eef;
+}
+
+button:disabled {
+  background: #555;
+  cursor: not-allowed;
+}
+
+.status {
+  background: #2a2a2a;
+  padding: 15px;
+  border-radius: 8px;
+  margin-bottom: 20px;
+}
+
+.status-item {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+
+.status-label {
+  color: #888;
+}
+
+.status-value {
+  color: #4a9eff;
+  font-weight: 500;
+}
+
+.status-value.waiting {
+  color: #ff9800;
+}
+
+.status-value.error {
+  color: #f44336;
+}
+
+.data-display {
+  background: #2a2a2a;
+  padding: 20px;
+  border-radius: 8px;
+}
+
+.data-display h2 {
+  margin-bottom: 15px;
+  color: #4a9eff;
+}
+
+.no-data {
+  color: #888;
+  text-align: center;
+  padding: 20px;
+}
+
+.data-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.data-item {
+  padding: 15px;
+  background: #1a1a1a;
+  border-radius: 4px;
+  border-left: 3px solid #4a9eff;
+}
+
+.data-version {
+  font-size: 18px;
+  font-weight: bold;
+  color: #4a9eff;
+  margin-bottom: 5px;
+}
+
+.data-message {
+  margin-bottom: 5px;
+  color: #e0e0e0;
+}
+
+.data-timestamp {
+  color: #888;
+  font-size: 12px;
+}
+
+.poll-indicator {
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: #ff9800;
+  margin-right: 8px;
+  animation: pulse 1s infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { 
+    opacity: 1; 
+  }
+  50% { 
+    opacity: 0.5; 
+  }
+}
