@@ -1,0 +1,213 @@
+.container {
+  max-width: 900px;
+  margin: 0 auto;
+}
+
+h1 {
+  color: #4a9eff;
+  margin-bottom: 10px;
+}
+
+.subtitle {
+  color: #888;
+  margin-bottom: 30px;
+}
+
+.controls {
+  background: #2a2a2a;
+  padding: 20px;
+  border-radius: 8px;
+  margin-bottom: 20px;
+}
+
+.control-group {
+  margin-bottom: 15px;
+}
+
+label {
+  display: block;
+  margin-bottom: 5px;
+  color: #ccc;
+}
+
+input[type="text"], textarea {
+  width: 100%;
+  padding: 8px;
+  background: #1a1a1a;
+  border: 1px solid #444;
+  border-radius: 4px;
+  color: #e0e0e0;
+  font-family: inherit;
+}
+
+.url-input {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
+textarea {
+  min-height: 80px;
+  resize: vertical;
+}
+
+textarea:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+button {
+  padding: 10px 20px;
+  background: #4a9eff;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 14px;
+  margin-right: 10px;
+  margin-top: 10px;
+  transition: background 0.2s;
+}
+
+button:hover:not(:disabled) {
+  background: #3a8eef;
+}
+
+button:disabled {
+  background: #555;
+  cursor: not-allowed;
+}
+
+.status {
+  background: #2a2a2a;
+  padding: 15px;
+  border-radius: 8px;
+  margin-bottom: 20px;
+}
+
+.status-item {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+
+.status-label {
+  color: #888;
+}
+
+.status-value {
+  color: #4a9eff;
+  font-weight: 500;
+}
+
+.status-value.connected {
+  color: #4caf50;
+}
+
+.status-value.disconnected {
+  color: #f44336;
+}
+
+.status-value.connecting {
+  color: #ff9800;
+}
+
+.status-value.error {
+  color: #f44336;
+}
+
+.messages {
+  background: #2a2a2a;
+  padding: 20px;
+  border-radius: 8px;
+  max-height: 400px;
+  overflow-y: auto;
+}
+
+.messages h2 {
+  margin-bottom: 15px;
+  color: #4a9eff;
+}
+
+.no-messages {
+  color: #888;
+  text-align: center;
+  padding: 20px;
+}
+
+.message-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.message {
+  padding: 12px;
+  background: #1a1a1a;
+  border-radius: 4px;
+  border-left: 3px solid #4a9eff;
+}
+
+.message-system {
+  border-left-color: #4caf50;
+}
+
+.message-echo {
+  border-left-color: #ff9800;
+}
+
+.message-broadcast {
+  border-left-color: #9c27b0;
+}
+
+.message-type {
+  font-size: 12px;
+  color: #888;
+  margin-bottom: 5px;
+  text-transform: uppercase;
+}
+
+.message-content {
+  color: #e0e0e0;
+  margin-bottom: 5px;
+  word-break: break-word;
+}
+
+.message-timestamp {
+  color: #666;
+  font-size: 11px;
+}
+
+.connection-indicator {
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  margin-right: 8px;
+}
+
+.connection-indicator.connected {
+  background: #4caf50;
+  animation: pulse 1s infinite;
+}
+
+.connection-indicator.disconnected {
+  background: #f44336;
+}
+
+.connection-indicator.connecting {
+  background: #ff9800;
+  animation: pulse 1s infinite;
+}
+
+.connection-indicator.error {
+  background: #f44336;
+}
+
+@keyframes pulse {
+  0%, 100% { 
+    opacity: 1; 
+  }
+  50% { 
+    opacity: 0.5; 
+  }
+}

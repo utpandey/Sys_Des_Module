@@ -1,0 +1,166 @@
+.container {
+  max-width: 1000px;
+  margin: 0 auto;
+}
+
+h1 {
+  color: #4a9eff;
+  margin-bottom: 10px;
+}
+
+.subtitle {
+  color: #888;
+  margin-bottom: 30px;
+}
+
+.section {
+  background: #2a2a2a;
+  padding: 20px;
+  border-radius: 8px;
+  margin-bottom: 20px;
+}
+
+.section h2 {
+  color: #4a9eff;
+  margin-bottom: 15px;
+}
+
+.form-group {
+  margin-bottom: 15px;
+}
+
+label {
+  display: block;
+  margin-bottom: 5px;
+  color: #ccc;
+}
+
+input[type="text"], input[type="url"], textarea, select {
+  width: 100%;
+  padding: 8px;
+  background: #1a1a1a;
+  border: 1px solid #444;
+  border-radius: 4px;
+  color: #e0e0e0;
+  font-family: inherit;
+}
+
+textarea {
+  min-height: 100px;
+  resize: vertical;
+  font-family: 'Courier New', monospace;
+}
+
+button {
+  padding: 10px 20px;
+  background: #4a9eff;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 14px;
+  margin-right: 10px;
+  margin-top: 10px;
+  transition: background 0.2s;
+}
+
+button:hover:not(:disabled) {
+  background: #3a8eef;
+}
+
+button:disabled {
+  background: #555;
+  cursor: not-allowed;
+}
+
+.status {
+  margin-top: 15px;
+  padding: 10px;
+  background: #1a1a1a;
+  border-radius: 4px;
+  border-left: 3px solid #4a9eff;
+}
+
+.status.success {
+  border-left-color: #4caf50;
+}
+
+.status.error {
+  border-left-color: #f44336;
+}
+
+.status.info {
+  border-left-color: #ff9800;
+}
+
+.webhook-list {
+  max-height: 400px;
+  overflow-y: auto;
+  margin-top: 15px;
+}
+
+.webhook-item {
+  padding: 12px;
+  background: #1a1a1a;
+  border-radius: 4px;
+  margin-bottom: 10px;
+  border-left: 3px solid #4a9eff;
+}
+
+.webhook-item.verified {
+  border-left-color: #4caf50;
+}
+
+.webhook-item.unverified {
+  border-left-color: #f44336;
+}
+
+.webhook-header {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+
+.webhook-event {
+  font-weight: bold;
+  color: #4a9eff;
+}
+
+.webhook-time {
+  color: #888;
+  font-size: 12px;
+}
+
+.webhook-payload {
+  color: #ccc;
+  font-size: 12px;
+  font-family: 'Courier New', monospace;
+  word-break: break-all;
+  margin-top: 5px;
+  white-space: pre-wrap;
+}
+
+.badge {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 12px;
+  font-size: 11px;
+  font-weight: bold;
+  margin-left: 8px;
+}
+
+.badge.verified {
+  background: #4caf50;
+  color: white;
+}
+
+.badge.unverified {
+  background: #f44336;
+  color: white;
+}
+
+.no-webhooks {
+  color: #888;
+  text-align: center;
+  padding: 20px;
+}
