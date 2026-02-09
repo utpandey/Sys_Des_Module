@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>XSS Vulnerable Example - DO NOT USE IN PRODUCTION</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #1a1a1a;
+            color: #e0e0e0;
+            padding: 20px;
+        }
+
+        .warning {
+            background: #f44336;
+            color: white;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            font-weight: bold;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+
+        .vulnerable-section {
+            background: #2a2a2a;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            border: 2px solid #f44336;
+        }
+
+        h1 {
+            color: #f44336;
+            margin-bottom: 10px;
+        }
+
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 5px;
+            color: #ccc;
+        }
+
+        input, textarea {
+            width: 100%;
+            padding: 8px;
+            background: #1a1a1a;
+            border: 1px solid #444;
+            border-radius: 4px;
+            color: #e0e0e0;
+        }
+
+        button {
+            padding: 10px 20px;
+            background: #f44336;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+
+        .output {
+            margin-top: 20px;
+            padding: 15px;
+            background: #1a1a1a;
+            border-radius: 4px;
+            min-height: 100px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="warning">
+            ⚠️ WARNING: This page demonstrates VULNERABLE code. DO NOT use in production!
+        </div>
+
+        <h1>XSS Vulnerable Examples</h1>
+
+        <div class="vulnerable-section">
+            <h2>Vulnerability 1: innerHTML with User Input</h2>
+            <p style="color: #888; margin-bottom: 15px;">
+                This is EXTREMELY DANGEROUS. Never use innerHTML with user input.
+            </p>
+            <div class="form-group">
+                <label>Enter your name (try: &lt;img src=x onerror="alert('XSS')"&gt;):</label>
+                <input type="text" id="nameInput" placeholder="Your name">
+            </div>
+            <button onclick="vulnerableInnerHTML()">Display (VULNERABLE)</button>
+            <div id="output1" class="output"></div>
+        </div>
+
+        <div class="vulnerable-section">
+            <h2>Vulnerability 2: eval() with User Input</h2>
+            <p style="color: #888; margin-bottom: 15px;">
+                eval() executes any JavaScript code. NEVER use with user input.
+            </p>
+            <div class="form-group">
+                <label>Enter JavaScript code (try: alert('XSS')):</label>
+                <input type="text" id="codeInput" placeholder="JavaScript code">
+            </div>
+            <button onclick="vulnerableEval()">Execute (VULNERABLE)</button>
+            <div id="output2" class="output"></div>
+        </div>
+
+        <div class="vulnerable-section">
+            <h2>Vulnerability 3: document.write() with User Input</h2>
+            <p style="color: #888; margin-bottom: 15px;">
+                document.write() can inject malicious scripts.
+            </p>
+            <div class="form-group">
+                <label>Enter HTML (try: &lt;script&gt;alert('XSS')&lt;/script&gt;):</label>
+                <textarea id="htmlInput" placeholder="HTML content"></textarea>
+            </div>
+            <button onclick="vulnerableDocumentWrite()">Write (VULNERABLE)</button>
+            <div id="output3" class="output"></div>
+        </div>
+
+        <div class="vulnerable-section">
+            <h2>Vulnerability 4: URL Parameters (Reflected XSS)</h2>
+            <p style="color: #888; margin-bottom: 15px;">
+                URL parameters are often reflected without sanitization.
+            </p>
+            <p style="color: #ff9800;">
+                Try accessing: ?message=&lt;script&gt;alert('XSS')&lt;/script&gt;
+            </p>
+            <div id="output4" class="output"></div>
+        </div>
+    </div>
+
+    <script>
+        // ❌ VULNERABLE: innerHTML with user input
+        function vulnerableInnerHTML() {
+            const userInput = document.getElementById('nameInput').value;
+            const output = document.getElementById('output1');
+            // DANGEROUS: Directly inserting user input into innerHTML
+            output.innerHTML = '<h3>Hello, ' + userInput + '!</h3>';
+        }
+
+        // ❌ VULNERABLE: eval() with user input
+        function vulnerableEval() {
+            const userInput = document.getElementById('codeInput').value;
+            const output = document.getElementById('output2');
+            try {
+                // DANGEROUS: Executing user input as code
+                const result = eval(userInput);
+                output.innerHTML = '<p>Result: ' + result + '</p>';
+            } catch (error) {
+                output.innerHTML = '<p style="color: #f44336;">Error: ' + error.message + '</p>';
+            }
+        }
+
+        // ❌ VULNERABLE: document.write() with user input
+        function vulnerableDocumentWrite() {
+            const userInput = document.getElementById('htmlInput').value;
+            const output = document.getElementById('output3');
+            // DANGEROUS: Writing user input directly to document
+            output.innerHTML = '';
+            const script = document.createElement('script');
+            script.textContent = `
+                document.getElementById('output3').innerHTML = ${JSON.stringify(userInput)};
+            `;
+            document.body.appendChild(script);
+        }
+
+        // ❌ VULNERABLE: Reflected XSS from URL parameters
+        window.addEventListener('DOMContentLoaded', () => {
+            const urlParams = new URLSearchParams(window.location.search);
+            const message = urlParams.get('message');
+            if (message) {
+                const output = document.getElementById('output4');
+                // DANGEROUS: Reflecting URL parameter without sanitization
+                output.innerHTML = '<p>Message: ' + message + '</p>';
+            }
+        });
+    </script>
+</body>
+</html>

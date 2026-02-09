@@ -1,0 +1,709 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Network Optimization - Vanilla JS Examples</title>
+  
+  <!-- ============================================
+       1. CRITICAL RENDERING PATH OPTIMIZATION
+       ============================================ -->
+  
+  <!-- 
+    CRITICAL CSS - Inline above-the-fold styles
+    This prevents render-blocking and improves FCP
+  -->
+  <style>
+    /* Critical CSS - Only styles needed for initial viewport */
+    :root {
+      --primary: #2563eb;
+      --bg: #0f172a;
+      --text: #e2e8f0;
+    }
+    
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    
+    body {
+      font-family: system-ui, -apple-system, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.6;
+    }
+    
+    .hero {
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      padding: 2rem;
+    }
+    
+    h1 { font-size: clamp(2rem, 5vw, 4rem); }
+    
+    /* Loading indicator for lazy content */
+    .loading {
+      display: flex;
+      justify-content: center;
+      padding: 2rem;
+    }
+    
+    .spinner {
+      width: 40px;
+      height: 40px;
+      border: 3px solid var(--text);
+      border-top-color: var(--primary);
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+    }
+    
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+  </style>
+  
+  <!-- 
+    NON-CRITICAL CSS - Load asynchronously
+    This CSS won't block rendering
+  -->
+  <link rel="preload" href="non-critical.css" as="style" onload="this.onload=null;this.rel='stylesheet'">
+  <noscript><link rel="stylesheet" href="non-critical.css"></noscript>
+  
+  <!-- ============================================
+       4. RESOURCE HINTING
+       ============================================ -->
+  
+  <!-- DNS Prefetch - Resolve DNS for third-party domains early -->
+  <link rel="dns-prefetch" href="//fonts.googleapis.com">
+  <link rel="dns-prefetch" href="//api.example.com">
+  <link rel="dns-prefetch" href="//cdn.example.com">
+  <link rel="dns-prefetch" href="//analytics.example.com">
+  
+  <!-- Preconnect - Full connection setup (DNS + TCP + TLS) for critical origins -->
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="preconnect" href="https://api.example.com" crossorigin>
+  
+  <!-- Preload - Critical resources for current page -->
+  <link rel="preload" href="/fonts/inter.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="preload" href="/images/hero.webp" as="image" fetchpriority="high">
+  <link rel="preload" href="/js/critical.js" as="script">
+  
+  <!-- Prefetch - Resources for likely next navigation (low priority) -->
+  <link rel="prefetch" href="/about.html">
+  <link rel="prefetch" href="/js/about.js">
+  
+  <!-- Module Preload - For ES modules -->
+  <link rel="modulepreload" href="/js/modules/utils.mjs">
+  
+  <!-- ============================================
+       5. FETCH PRIORITY
+       ============================================ -->
+  
+  <!-- Scripts with priority hints -->
+  <script src="/js/analytics.js" async fetchpriority="low"></script>
+  <script src="/js/critical.js" fetchpriority="high"></script>
+  
+</head>
+<body>
+  <main class="hero">
+    <h1>Network Optimization</h1>
+    <p>Vanilla JavaScript Examples</p>
+    
+    <!-- ============================================
+         5. FETCH PRIORITY - Images
+         ============================================ -->
+    
+    <!-- High priority for LCP (Largest Contentful Paint) image -->
+    <img 
+      src="/images/hero.webp" 
+      alt="Hero image" 
+      width="800" 
+      height="600"
+      fetchpriority="high"
+      decoding="async"
+    >
+    
+    <!-- Low priority for below-the-fold images -->
+    <img 
+      src="/images/secondary.webp" 
+      alt="Secondary" 
+      loading="lazy"
+      fetchpriority="low"
+      decoding="async"
+    >
+  </main>
+  
+  <!-- Lazy loaded section -->
+  <section id="lazy-section">
+    <div class="loading">
+      <div class="spinner"></div>
+    </div>
+  </section>
+  
+  <!-- ============================================
+       JAVASCRIPT EXAMPLES
+       ============================================ -->
+  
+  <script>
+    /**
+     * ============================================
+     * 1. CRITICAL RENDERING PATH HELPERS
+     * ============================================
+     */
+    
+    // Load non-critical CSS asynchronously
+    function loadCSS(href) {
+      const link = document.createElement('link');
+      link.rel = 'stylesheet';
+      link.href = href;
+      link.media = 'print'; // Low priority initially
+      link.onload = function() {
+        this.media = 'all'; // Apply styles after load
+      };
+      document.head.appendChild(link);
+    }
+    
+    // Load CSS after critical content is rendered
+    if (window.requestIdleCallback) {
+      requestIdleCallback(() => loadCSS('/css/non-critical.css'));
+    } else {
+      setTimeout(() => loadCSS('/css/non-critical.css'), 100);
+    }
+    
+    // Inline critical CSS detection (development helper)
+    function detectCriticalCSS() {
+      const viewportHeight = window.innerHeight;
+      const criticalElements = document.querySelectorAll('*');
+      const criticalRules = new Set();
+      
+      criticalElements.forEach(el => {
+        const rect = el.getBoundingClientRect();
+        if (rect.top < viewportHeight) {
+          const styles = window.getComputedStyle(el);
+          // Would extract critical styles here
+        }
+      });
+    }
+    
+    /**
+     * ============================================
+     * 2. MINIMIZE HTTP REQUESTS
+     * ============================================
+     */
+    
+    // Request batching - combine multiple API calls
+    class RequestBatcher {
+      constructor(batchInterval = 50) {
+        this.queue = [];
+        this.batchInterval = batchInterval;
+        this.timer = null;
+      }
+      
+      add(url, options = {}) {
+        return new Promise((resolve, reject) => {
+          this.queue.push({ url, options, resolve, reject });
+          
+          if (!this.timer) {
+            this.timer = setTimeout(() => this.flush(), this.batchInterval);
+          }
+        });
+      }
+      
+      async flush() {
+        const batch = this.queue.splice(0);
+        this.timer = null;
+        
+        if (batch.length === 0) return;
+        
+        // If your API supports batch requests
+        try {
+          const response = await fetch('/api/batch', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              requests: batch.map(({ url, options }) => ({ url, ...options }))
+            })
+          });
+          
+          const results = await response.json();
+          batch.forEach((item, i) => item.resolve(results[i]));
+        } catch (error) {
+          batch.forEach(item => item.reject(error));
+        }
+      }
+    }
+    
+    // Usage:
+    const batcher = new RequestBatcher(100);
+    // These will be batched into a single request
+    // batcher.add('/api/user/1');
+    // batcher.add('/api/user/2');
+    // batcher.add('/api/user/3');
+    
+    // Inline small images as Data URIs
+    function imageToDataURI(img) {
+      const canvas = document.createElement('canvas');
+      canvas.width = img.naturalWidth;
+      canvas.height = img.naturalHeight;
+      const ctx = canvas.getContext('2d');
+      ctx.drawImage(img, 0, 0);
+      return canvas.toDataURL('image/webp', 0.8);
+    }
+    
+    /**
+     * ============================================
+     * 3. AVOID REDIRECTIONS
+     * ============================================
+     */
+    
+    // Check for redirects programmatically
+    async function checkRedirects(url) {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 5000);
+      
+      try {
+        const response = await fetch(url, {
+          method: 'HEAD',
+          redirect: 'manual', // Don't follow redirects
+          signal: controller.signal
+        });
+        
+        clearTimeout(timeoutId);
+        
+        const isRedirect = response.type === 'opaqueredirect' || 
+                          [301, 302, 307, 308].includes(response.status);
+        
+        return {
+          url,
+          isRedirect,
+          status: response.status,
+          // Note: Can't read Location header due to CORS
+        };
+      } catch (error) {
+        clearTimeout(timeoutId);
+        return { url, error: error.message };
+      }
+    }
+    
+    // Update links to final URLs (avoid client-side redirects)
+    function updateLinksToFinalURLs(urlMap) {
+      document.querySelectorAll('a[href]').forEach(link => {
+        const href = link.getAttribute('href');
+        if (urlMap[href]) {
+          link.setAttribute('href', urlMap[href]);
+        }
+      });
+    }
+    
+    /**
+     * ============================================
+     * 4. RESOURCE HINTING (Dynamic)
+     * ============================================
+     */
+    
+    // Dynamic preconnect for third-party domains
+    function preconnect(url) {
+      const link = document.createElement('link');
+      link.rel = 'preconnect';
+      link.href = url;
+      link.crossOrigin = 'anonymous';
+      document.head.appendChild(link);
+    }
+    
+    // Dynamic DNS prefetch
+    function dnsPrefetch(url) {
+      const link = document.createElement('link');
+      link.rel = 'dns-prefetch';
+      link.href = url;
+      document.head.appendChild(link);
+    }
+    
+    // Dynamic preload
+    function preload(url, as, options = {}) {
+      const link = document.createElement('link');
+      link.rel = 'preload';
+      link.href = url;
+      link.as = as;
+      
+      if (options.type) link.type = options.type;
+      if (options.crossOrigin) link.crossOrigin = options.crossOrigin;
+      if (options.fetchPriority) link.fetchPriority = options.fetchPriority;
+      
+      document.head.appendChild(link);
+      return link;
+    }
+    
+    // Prefetch for likely navigation
+    function prefetch(url) {
+      const link = document.createElement('link');
+      link.rel = 'prefetch';
+      link.href = url;
+      document.head.appendChild(link);
+    }
+    
+    // Smart prefetch on hover (predict user navigation)
+    function setupSmartPrefetch() {
+      const prefetched = new Set();
+      
+      document.addEventListener('mouseover', (e) => {
+        const link = e.target.closest('a[href]');
+        if (!link) return;
+        
+        const href = link.getAttribute('href');
+        
+        // Only prefetch internal links
+        if (href.startsWith('/') && !prefetched.has(href)) {
+          prefetch(href);
+          prefetched.add(href);
+        }
+      }, { passive: true });
+    }
+    
+    setupSmartPrefetch();
+    
+    // Preload based on user intent (hover, focus)
+    function setupIntentPreload() {
+      let preloadTimer = null;
+      
+      document.addEventListener('mouseenter', (e) => {
+        const link = e.target.closest('[data-preload-on-intent]');
+        if (!link) return;
+        
+        preloadTimer = setTimeout(() => {
+          const resources = JSON.parse(link.dataset.preloadResources || '[]');
+          resources.forEach(({ url, as, type }) => preload(url, as, { type }));
+        }, 200); // Small delay to confirm intent
+      }, true);
+      
+      document.addEventListener('mouseleave', () => {
+        if (preloadTimer) {
+          clearTimeout(preloadTimer);
+          preloadTimer = null;
+        }
+      }, true);
+    }
+    
+    /**
+     * ============================================
+     * 5. FETCH PRIORITY
+     * ============================================
+     */
+    
+    // Load image with specific priority
+    function loadImageWithPriority(src, priority = 'auto') {
+      const img = new Image();
+      img.fetchPriority = priority; // 'high', 'low', or 'auto'
+      img.decoding = 'async';
+      img.src = src;
+      return img;
+    }
+    
+    // Fetch with priority
+    async function fetchWithPriority(url, priority = 'auto') {
+      return fetch(url, {
+        priority, // 'high', 'low', or 'auto'
+      });
+    }
+    
+    // Prioritize LCP image
+    function prioritizeLCPImage() {
+      // Find the largest image in viewport
+      const images = document.querySelectorAll('img');
+      let lcpCandidate = null;
+      let maxArea = 0;
+      
+      images.forEach(img => {
+        const rect = img.getBoundingClientRect();
+        if (rect.top < window.innerHeight && rect.bottom > 0) {
+          const area = rect.width * rect.height;
+          if (area > maxArea) {
+            maxArea = area;
+            lcpCandidate = img;
+          }
+        }
+      });
+      
+      if (lcpCandidate) {
+        lcpCandidate.fetchPriority = 'high';
+        lcpCandidate.loading = 'eager';
+        console.log('LCP candidate:', lcpCandidate.src);
+      }
+    }
+    
+    /**
+     * ============================================
+     * 6. EARLY HINTS SIMULATION (Client-side)
+     * Note: Real Early Hints are server-side (103 status)
+     * ============================================
+     */
+    
+    // Client-side resource hint injection (before full page load)
+    // This runs as early as possible in the document
+    (function earlyResourceHints() {
+      // These should ideally come from server as 103 Early Hints
+      const criticalResources = [
+        { href: '/fonts/inter.woff2', as: 'font', type: 'font/woff2', crossOrigin: true },
+        { href: '/css/critical.css', as: 'style' },
+        { href: '/js/app.js', as: 'script' }
+      ];
+      
+      criticalResources.forEach(({ href, as, type, crossOrigin }) => {
+        const link = document.createElement('link');
+        link.rel = 'preload';
+        link.href = href;
+        link.as = as;
+        if (type) link.type = type;
+        if (crossOrigin) link.crossOrigin = 'anonymous';
+        document.head.appendChild(link);
+      });
+    })();
+    
+    /**
+     * ============================================
+     * 7. HTTP VERSION DETECTION
+     * ============================================
+     */
+    
+    // Detect HTTP protocol version
+    function detectHTTPVersion() {
+      // Using Navigation Timing API
+      const entries = performance.getEntriesByType('navigation');
+      if (entries.length > 0) {
+        const navEntry = entries[0];
+        return navEntry.nextHopProtocol; // 'h2', 'h3', 'http/1.1'
+      }
+      return 'unknown';
+    }
+    
+    // Log HTTP versions for all resources
+    function logResourceProtocols() {
+      const resources = performance.getEntriesByType('resource');
+      const protocols = {};
+      
+      resources.forEach(resource => {
+        const protocol = resource.nextHopProtocol || 'unknown';
+        protocols[protocol] = (protocols[protocol] || 0) + 1;
+      });
+      
+      console.log('HTTP Protocols used:', protocols);
+      return protocols;
+    }
+    
+    // Check if HTTP/2 or HTTP/3 is being used
+    function checkModernProtocol() {
+      const protocol = detectHTTPVersion();
+      const isModern = ['h2', 'h3', 'h2c'].includes(protocol);
+      
+      if (!isModern) {
+        console.warn('⚠️ Not using HTTP/2 or HTTP/3. Performance may be impacted.');
+      }
+      
+      return { protocol, isModern };
+    }
+    
+    /**
+     * ============================================
+     * 8. COMPRESSION DETECTION
+     * ============================================
+     */
+    
+    // Check if response is compressed
+    async function checkCompression(url) {
+      try {
+        const response = await fetch(url, { method: 'HEAD' });
+        const encoding = response.headers.get('Content-Encoding');
+        const size = response.headers.get('Content-Length');
+        
+        return {
+          url,
+          compressed: !!encoding,
+          encoding: encoding || 'none',
+          size: size ? parseInt(size) : 'unknown'
+        };
+      } catch (error) {
+        return { url, error: error.message };
+      }
+    }
+    
+    // Check compression for all resources
+    function analyzeResourceCompression() {
+      const resources = performance.getEntriesByType('resource');
+      
+      const analysis = resources.map(resource => ({
+        name: resource.name,
+        type: resource.initiatorType,
+        transferSize: resource.transferSize,
+        encodedBodySize: resource.encodedBodySize,
+        decodedBodySize: resource.decodedBodySize,
+        compressionRatio: resource.decodedBodySize 
+          ? (1 - resource.encodedBodySize / resource.decodedBodySize).toFixed(2)
+          : 'N/A'
+      }));
+      
+      console.table(analysis);
+      return analysis;
+    }
+    
+    /**
+     * ============================================
+     * 9. HTTP CACHING
+     * ============================================
+     */
+    
+    // Parse Cache-Control header
+    function parseCacheControl(header) {
+      const directives = {};
+      if (!header) return directives;
+      
+      header.split(',').forEach(directive => {
+        const [key, value] = directive.trim().split('=');
+        directives[key.toLowerCase()] = value ? parseInt(value) || value : true;
+      });
+      
+      return directives;
+    }
+    
+    // Check if resource is cacheable
+    async function checkCacheability(url) {
+      try {
+        const response = await fetch(url, { method: 'HEAD' });
+        const cacheControl = response.headers.get('Cache-Control');
+        const etag = response.headers.get('ETag');
+        const lastModified = response.headers.get('Last-Modified');
+        const expires = response.headers.get('Expires');
+        
+        const parsed = parseCacheControl(cacheControl);
+        
+        return {
+          url,
+          cacheControl,
+          parsed,
+          etag: !!etag,
+          lastModified: !!lastModified,
+          expires,
+          cacheable: !parsed['no-store'],
+          maxAge: parsed['max-age'] || parsed['s-maxage'] || null,
+          immutable: !!parsed['immutable']
+        };
+      } catch (error) {
+        return { url, error: error.message };
+      }
+    }
+    
+    // Set cache hints for fetch requests
+    async function fetchWithCacheHint(url, cacheMode = 'default') {
+      // cache modes: 'default', 'no-store', 'reload', 'no-cache', 'force-cache', 'only-if-cached'
+      return fetch(url, { cache: cacheMode });
+    }
+    
+    /**
+     * ============================================
+     * 10. SERVICE WORKER CACHING
+     * ============================================
+     */
+    
+    // Register service worker
+    async function registerServiceWorker() {
+      if ('serviceWorker' in navigator) {
+        try {
+          const registration = await navigator.serviceWorker.register('/sw.js', {
+            scope: '/'
+          });
+          
+          console.log('ServiceWorker registered:', registration.scope);
+          
+          // Handle updates
+          registration.addEventListener('updatefound', () => {
+            const newWorker = registration.installing;
+            newWorker.addEventListener('statechange', () => {
+              if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+                // New version available
+                console.log('New version available! Refresh to update.');
+              }
+            });
+          });
+          
+          return registration;
+        } catch (error) {
+          console.error('ServiceWorker registration failed:', error);
+        }
+      }
+    }
+    
+    // Check if resource is in cache
+    async function isInCache(url) {
+      const cache = await caches.open('v1');
+      const response = await cache.match(url);
+      return !!response;
+    }
+    
+    // Manually cache resources
+    async function cacheResources(urls, cacheName = 'v1') {
+      const cache = await caches.open(cacheName);
+      await cache.addAll(urls);
+      console.log(`Cached ${urls.length} resources in ${cacheName}`);
+    }
+    
+    // Clear specific cache
+    async function clearCache(cacheName) {
+      await caches.delete(cacheName);
+      console.log(`Cleared cache: ${cacheName}`);
+    }
+    
+    // List all caches
+    async function listCaches() {
+      const cacheNames = await caches.keys();
+      console.log('Available caches:', cacheNames);
+      return cacheNames;
+    }
+    
+    /**
+     * ============================================
+     * PERFORMANCE MONITORING
+     * ============================================
+     */
+    
+    // Monitor all network performance
+    function monitorNetworkPerformance() {
+      const observer = new PerformanceObserver((list) => {
+        list.getEntries().forEach(entry => {
+          if (entry.entryType === 'resource') {
+            console.log(`Resource: ${entry.name}`);
+            console.log(`  Protocol: ${entry.nextHopProtocol}`);
+            console.log(`  Duration: ${entry.duration.toFixed(2)}ms`);
+            console.log(`  Transfer size: ${entry.transferSize} bytes`);
+            console.log(`  Cached: ${entry.transferSize === 0}`);
+          }
+        });
+      });
+      
+      observer.observe({ entryTypes: ['resource'] });
+      return observer;
+    }
+    
+    // Run diagnostics
+    function runNetworkDiagnostics() {
+      console.group('🌐 Network Optimization Diagnostics');
+      
+      console.log('HTTP Version:', detectHTTPVersion());
+      logResourceProtocols();
+      analyzeResourceCompression();
+      
+      console.groupEnd();
+    }
+    
+    // Initialize on load
+    window.addEventListener('load', () => {
+      runNetworkDiagnostics();
+      registerServiceWorker();
+    });
+  </script>
+  
+  <!-- 
+    NON-CRITICAL SCRIPTS
+    Loaded with defer to not block parsing
+  -->
+  <script src="/js/analytics.js" defer></script>
+  <script src="/js/non-critical.js" defer></script>
+</body>
+</html>

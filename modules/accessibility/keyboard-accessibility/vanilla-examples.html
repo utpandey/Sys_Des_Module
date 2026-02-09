@@ -1,0 +1,489 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Keyboard Accessibility - Vanilla JS Examples</title>
+    <style>
+        *,
+        *::before,
+        *::after {
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: #0f172a;
+            color: #e2e8f0;
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 2rem;
+            line-height: 1.6;
+        }
+
+        h1 {
+            color: #38bdf8;
+        }
+
+        h2 {
+            color: #818cf8;
+            margin-top: 3rem;
+        }
+
+        .example {
+            background: #1e293b;
+            border-radius: 0.75rem;
+            padding: 1.5rem;
+            margin: 1rem 0;
+            border: 1px solid #334155;
+        }
+
+        .bad {
+            border-color: #ef4444;
+        }
+
+        .good {
+            border-color: #22c55e;
+        }
+
+        .label {
+            font-size: 0.75rem;
+            font-weight: bold;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            margin-bottom: 0.5rem;
+        }
+
+        .label.bad-label {
+            color: #ef4444;
+        }
+
+        .label.good-label {
+            color: #22c55e;
+        }
+
+        code {
+            background: #334155;
+            padding: 0.2em 0.4em;
+            border-radius: 0.25rem;
+            font-size: 0.9em;
+        }
+
+        /* ============================================
+       1. SKIP NAVIGATION LINK
+       ============================================ */
+        .skip-link {
+            position: absolute;
+            top: -100px;
+            left: 0;
+            background: #38bdf8;
+            color: #0f172a;
+            padding: 0.75rem 1.5rem;
+            z-index: 1000;
+            font-weight: bold;
+            text-decoration: none;
+            transition: top 0.2s;
+        }
+
+        .skip-link:focus {
+            top: 0;
+            /* Becomes visible on Tab */
+        }
+
+        /* ============================================
+       2. FOCUS STYLES
+       ============================================ */
+        /* ❌ BAD: Never do this */
+        .no-focus-bad:focus {
+            outline: none;
+        }
+
+        /* ✅ GOOD: Custom focus indicator using :focus-visible */
+        .custom-focus:focus-visible {
+            outline: 3px solid #38bdf8;
+            outline-offset: 2px;
+            border-radius: 4px;
+        }
+
+        .custom-focus:focus:not(:focus-visible) {
+            outline: none;
+            /* No outline for mouse clicks */
+        }
+
+        /* ============================================
+       SHARED STYLES
+       ============================================ */
+        .btn {
+            background: #3b82f6;
+            color: white;
+            border: none;
+            padding: 0.5rem 1.25rem;
+            border-radius: 0.5rem;
+            cursor: pointer;
+            font-size: 1rem;
+            margin: 0.25rem;
+        }
+
+        .btn:hover {
+            background: #2563eb;
+        }
+
+        .btn:focus-visible {
+            outline: 3px solid #38bdf8;
+            outline-offset: 2px;
+        }
+
+        .fake-btn {
+            display: inline-block;
+            background: #3b82f6;
+            color: white;
+            padding: 0.5rem 1.25rem;
+            border-radius: 0.5rem;
+            cursor: pointer;
+            font-size: 1rem;
+            margin: 0.25rem;
+        }
+
+        .fake-btn:hover {
+            background: #2563eb;
+        }
+
+        /* Tab Panel Styles */
+        .tabs {
+            display: flex;
+            gap: 0;
+            border-bottom: 2px solid #334155;
+        }
+
+        .tab-btn {
+            background: transparent;
+            color: #94a3b8;
+            border: none;
+            padding: 0.75rem 1.25rem;
+            cursor: pointer;
+            font-size: 1rem;
+            border-bottom: 2px solid transparent;
+            margin-bottom: -2px;
+        }
+
+        .tab-btn[aria-selected="true"] {
+            color: #38bdf8;
+            border-bottom-color: #38bdf8;
+        }
+
+        .tab-btn:focus-visible {
+            outline: 2px solid #38bdf8;
+            outline-offset: -2px;
+        }
+
+        .tab-panel {
+            padding: 1rem 0;
+        }
+
+        .tab-panel[hidden] {
+            display: none;
+        }
+
+        /* Dropdown */
+        .dropdown {
+            position: relative;
+            display: inline-block;
+        }
+
+        .dropdown-menu {
+            position: absolute;
+            top: 100%;
+            left: 0;
+            background: #1e293b;
+            border: 1px solid #334155;
+            border-radius: 0.5rem;
+            min-width: 200px;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
+            display: none;
+            z-index: 100;
+        }
+
+        .dropdown-menu.open {
+            display: block;
+        }
+
+        .dropdown-item {
+            padding: 0.5rem 1rem;
+            cursor: pointer;
+            background: none;
+            border: none;
+            color: #e2e8f0;
+            width: 100%;
+            text-align: left;
+            font-size: 0.95rem;
+        }
+
+        .dropdown-item:hover,
+        .dropdown-item:focus {
+            background: #334155;
+            outline: none;
+        }
+
+        .dropdown-item:focus-visible {
+            outline: 2px solid #38bdf8;
+            outline-offset: -2px;
+        }
+    </style>
+</head>
+
+<body>
+
+    <!-- ✅ Skip Navigation Link (appears on Tab) -->
+    <a href="#main-content" class="skip-link">Skip to main content</a>
+
+    <h1>Keyboard Accessibility Examples</h1>
+    <p>Press <code>Tab</code> to navigate. All examples below are keyboard accessible.</p>
+
+    <main id="main-content">
+
+        <!-- ============================================
+         EXAMPLE 1: Button - Bad vs Good
+         ============================================ -->
+        <h2>1. Buttons: Bad vs Good</h2>
+
+        <div class="example bad">
+            <div class="label bad-label">❌ Bad — div as button (not keyboard accessible)</div>
+            <div class="fake-btn" onclick="alert('Clicked!')">
+                Click Me (div)
+            </div>
+            <p style="margin-top:0.5rem;font-size:0.85rem;color:#94a3b8;">
+                Can't Tab to it. Can't press Enter. Screen reader doesn't know it's a button.
+            </p>
+        </div>
+
+        <div class="example good">
+            <div class="label good-label">✅ Good — real button element</div>
+            <button class="btn" onclick="alert('Clicked!')">
+                Click Me (button)
+            </button>
+            <p style="margin-top:0.5rem;font-size:0.85rem;color:#94a3b8;">
+                Tab-focusable. Enter/Space to activate. Screen reader announces "button".
+            </p>
+        </div>
+
+        <div class="example good">
+            <div class="label good-label">✅ Good — custom div with full a11y (when button isn't possible)</div>
+            <div class="fake-btn custom-focus" role="button" tabindex="0" onclick="alert('Clicked!')"
+                onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();alert('Clicked!');}">
+                Click Me (accessible div)
+            </div>
+            <p style="margin-top:0.5rem;font-size:0.85rem;color:#94a3b8;">
+                Has role="button", tabindex="0", Enter/Space handlers. But just use &lt;button&gt;!
+            </p>
+        </div>
+
+
+        <!-- ============================================
+         EXAMPLE 2: Tab Panel (Roving Tabindex)
+         ============================================ -->
+        <h2>2. Tab Panel (Arrow Key Navigation)</h2>
+        <p style="font-size:0.9rem;color:#94a3b8;">
+            Uses <strong>roving tabindex</strong>: only active tab is in tab order.
+            Arrow keys move between tabs. Tab moves to panel content.
+        </p>
+
+        <div class="example good">
+            <div class="label good-label">✅ ARIA Tabs with roving tabindex</div>
+
+            <div role="tablist" aria-label="Example tabs" class="tabs" id="tablist">
+                <button role="tab" id="tab-1" aria-selected="true" aria-controls="panel-1" class="tab-btn"
+                    tabindex="0">Tab 1</button>
+                <button role="tab" id="tab-2" aria-selected="false" aria-controls="panel-2" class="tab-btn"
+                    tabindex="-1">Tab 2</button>
+                <button role="tab" id="tab-3" aria-selected="false" aria-controls="panel-3" class="tab-btn"
+                    tabindex="-1">Tab 3</button>
+            </div>
+
+            <div role="tabpanel" id="panel-1" aria-labelledby="tab-1" class="tab-panel">
+                <p>Content for Tab 1. Tab here from the tab bar, then Tab again to continue.</p>
+            </div>
+            <div role="tabpanel" id="panel-2" aria-labelledby="tab-2" class="tab-panel" hidden>
+                <p>Content for Tab 2. Navigate back to tabs with Shift+Tab.</p>
+            </div>
+            <div role="tabpanel" id="panel-3" aria-labelledby="tab-3" class="tab-panel" hidden>
+                <p>Content for Tab 3. Arrow keys switch between tabs.</p>
+            </div>
+        </div>
+
+
+        <!-- ============================================
+         EXAMPLE 3: Dropdown Menu
+         ============================================ -->
+        <h2>3. Accessible Dropdown Menu</h2>
+        <p style="font-size:0.9rem;color:#94a3b8;">
+            Opens with Enter/Space, navigates with Arrow keys, closes with Escape.
+        </p>
+
+        <div class="example good">
+            <div class="label good-label">✅ Keyboard accessible dropdown</div>
+
+            <div class="dropdown" id="dropdown">
+                <button class="btn" aria-haspopup="true" aria-expanded="false" id="dropdown-trigger">
+                    Options ▾
+                </button>
+                <div class="dropdown-menu" role="menu" aria-labelledby="dropdown-trigger" id="dropdown-menu">
+                    <button class="dropdown-item" role="menuitem">Edit</button>
+                    <button class="dropdown-item" role="menuitem">Duplicate</button>
+                    <button class="dropdown-item" role="menuitem">Archive</button>
+                    <button class="dropdown-item" role="menuitem" style="color:#ef4444;">Delete</button>
+                </div>
+            </div>
+        </div>
+
+
+        <!-- ============================================
+         EXAMPLE 4: Focus Visible vs Focus
+         ============================================ -->
+        <h2>4. :focus-visible (Smart Focus Rings)</h2>
+        <p style="font-size:0.9rem;color:#94a3b8;">
+            <code>:focus-visible</code> only shows focus ring on keyboard navigation, not mouse clicks.
+        </p>
+
+        <div class="example good">
+            <div class="label good-label">✅ Focus ring only on keyboard use</div>
+            <button class="btn custom-focus">Click me, then Tab to me</button>
+            <p style="margin-top:0.5rem;font-size:0.85rem;color:#94a3b8;">
+                Mouse click → no outline. Tab to it → blue outline appears.
+            </p>
+        </div>
+
+    </main>
+
+    <script>
+        /* ============================================
+           Tab Panel Logic (Roving Tabindex)
+           ============================================ */
+        const tablist = document.getElementById('tablist');
+        const tabs = tablist.querySelectorAll('[role="tab"]');
+        const panels = document.querySelectorAll('[role="tabpanel"]');
+
+        function activateTab(tab) {
+            // Deactivate all
+            tabs.forEach(t => {
+                t.setAttribute('aria-selected', 'false');
+                t.setAttribute('tabindex', '-1');
+            });
+            panels.forEach(p => p.hidden = true);
+
+            // Activate selected
+            tab.setAttribute('aria-selected', 'true');
+            tab.setAttribute('tabindex', '0');
+            tab.focus();
+
+            const panel = document.getElementById(tab.getAttribute('aria-controls'));
+            panel.hidden = false;
+        }
+
+        tablist.addEventListener('keydown', (e) => {
+            const currentIndex = Array.from(tabs).indexOf(e.target);
+            let newIndex;
+
+            switch (e.key) {
+                case 'ArrowRight':
+                    newIndex = (currentIndex + 1) % tabs.length;
+                    break;
+                case 'ArrowLeft':
+                    newIndex = (currentIndex - 1 + tabs.length) % tabs.length;
+                    break;
+                case 'Home':
+                    newIndex = 0;
+                    break;
+                case 'End':
+                    newIndex = tabs.length - 1;
+                    break;
+                default:
+                    return;
+            }
+
+            e.preventDefault();
+            activateTab(tabs[newIndex]);
+        });
+
+        tabs.forEach(tab => {
+            tab.addEventListener('click', () => activateTab(tab));
+        });
+
+
+        /* ============================================
+           Dropdown Menu Logic
+           ============================================ */
+        const trigger = document.getElementById('dropdown-trigger');
+        const menu = document.getElementById('dropdown-menu');
+        const items = menu.querySelectorAll('[role="menuitem"]');
+
+        function openMenu() {
+            menu.classList.add('open');
+            trigger.setAttribute('aria-expanded', 'true');
+            items[0].focus();
+        }
+
+        function closeMenu() {
+            menu.classList.remove('open');
+            trigger.setAttribute('aria-expanded', 'false');
+            trigger.focus();
+        }
+
+        trigger.addEventListener('click', () => {
+            const isOpen = menu.classList.contains('open');
+            isOpen ? closeMenu() : openMenu();
+        });
+
+        trigger.addEventListener('keydown', (e) => {
+            if (e.key === 'ArrowDown') {
+                e.preventDefault();
+                openMenu();
+            }
+        });
+
+        menu.addEventListener('keydown', (e) => {
+            const currentIndex = Array.from(items).indexOf(document.activeElement);
+
+            switch (e.key) {
+                case 'ArrowDown':
+                    e.preventDefault();
+                    items[(currentIndex + 1) % items.length].focus();
+                    break;
+                case 'ArrowUp':
+                    e.preventDefault();
+                    items[(currentIndex - 1 + items.length) % items.length].focus();
+                    break;
+                case 'Home':
+                    e.preventDefault();
+                    items[0].focus();
+                    break;
+                case 'End':
+                    e.preventDefault();
+                    items[items.length - 1].focus();
+                    break;
+                case 'Escape':
+                    closeMenu();
+                    break;
+                case 'Tab':
+                    closeMenu();
+                    break;
+            }
+        });
+
+        items.forEach(item => {
+            item.addEventListener('click', () => {
+                console.log('Selected:', item.textContent);
+                closeMenu();
+            });
+        });
+
+        // Close on outside click
+        document.addEventListener('click', (e) => {
+            if (!document.getElementById('dropdown').contains(e.target)) {
+                if (menu.classList.contains('open')) closeMenu();
+            }
+        });
+    </script>
+</body>
+
+</html>

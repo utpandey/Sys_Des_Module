@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!-- Content Security Policy - Prevents XSS -->
+    <meta http-equiv="Content-Security-Policy"
+        content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline';">
+    <title>XSS Secure Example</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #1a1a1a;
+            color: #e0e0e0;
+            padding: 20px;
+        }
+
+        .success {
+            background: #4caf50;
+            color: white;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            font-weight: bold;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+
+        .secure-section {
+            background: #2a2a2a;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            border: 2px solid #4caf50;
+        }
+
+        h1 {
+            color: #4caf50;
+            margin-bottom: 10px;
+        }
+
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 5px;
+            color: #ccc;
+        }
+
+        input,
+        textarea {
+            width: 100%;
+            padding: 8px;
+            background: #1a1a1a;
+            border: 1px solid #444;
+            border-radius: 4px;
+            color: #e0e0e0;
+        }
+
+        button {
+            padding: 10px 20px;
+            background: #4caf50;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+
+        .output {
+            margin-top: 20px;
+            padding: 15px;
+            background: #1a1a1a;
+            border-radius: 4px;
+            min-height: 100px;
+        }
+
+        .code-example {
+            background: #1a1a1a;
+            padding: 10px;
+            border-radius: 4px;
+            margin-top: 10px;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+            color: #888;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <div class="success">
+            ✅ This page demonstrates SECURE code patterns for preventing XSS attacks.
+        </div>
+
+        <h1>XSS Secure Examples</h1>
+
+        <div class="secure-section">
+            <h2>Secure Method 1: textContent (Recommended)</h2>
+            <p style="color: #888; margin-bottom: 15px;">
+                textContent automatically escapes HTML and prevents XSS.
+            </p>
+            <div class="form-group">
+                <label>Enter your name:</label>
+                <input type="text" id="nameInput" placeholder="Your name">
+            </div>
+            <button onclick="secureTextContent()">Display (SECURE)</button>
+            <div id="output1" class="output"></div>
+            <div class="code-example">
+                // ✅ SECURE: Using textContent<br>
+                element.textContent = userInput;
+            </div>
+        </div>
+
+        <div class="secure-section">
+            <h2>Secure Method 2: HTML Encoding</h2>
+            <p style="color: #888; margin-bottom: 15px;">
+                Manually encode HTML entities before rendering.
+            </p>
+            <div class="form-group">
+                <label>Enter HTML content:</label>
+                <textarea id="htmlInput" placeholder="HTML content"></textarea>
+            </div>
+            <button onclick="secureHTMLEncode()">Display (SECURE)</button>
+            <div id="output2" class="output"></div>
+            <div class="code-example">
+                // ✅ SECURE: HTML encoding<br>
+                function escapeHtml(text) {<br>
+                &nbsp;&nbsp;const map = { '&amp;': '&amp;', '&lt;': '&lt;', '&gt;': '&gt;', '&quot;': '&quot;',
+                '&#039;': '&#039;' };<br>
+                &nbsp;&nbsp;return text.replace(/[&<>"']/g, m => map[m]);<br>
+                    }
+            </div>
+        </div>
+
+        <div class="secure-section">
+            <h2>Secure Method 3: DOMPurify (For Rich Content)</h2>
+            <p style="color: #888; margin-bottom: 15px;">
+                Use DOMPurify library when you need to allow some HTML.
+            </p>
+            <div class="form-group">
+                <label>Enter HTML (only safe tags allowed):</label>
+                <textarea id="richInput" placeholder="<p>Safe HTML</p>"></textarea>
+            </div>
+            <button onclick="secureDOMPurify()">Display (SECURE)</button>
+            <div id="output3" class="output"></div>
+            <div class="code-example">
+                // ✅ SECURE: Using DOMPurify library<br>
+                // npm install dompurify<br>
+                import DOMPurify from 'dompurify';<br>
+                element.innerHTML = DOMPurify.sanitize(userInput);
+            </div>
+        </div>
+
+        <div class="secure-section">
+            <h2>Secure Method 4: URL Parameter Sanitization</h2>
+            <p style="color: #888; margin-bottom: 15px;">
+                Always sanitize URL parameters before displaying.
+            </p>
+            <p style="color: #ff9800;">
+                Try accessing: ?message=Hello%20World
+            </p>
+            <div id="output4" class="output"></div>
+            <div class="code-example">
+                // ✅ SECURE: Sanitizing URL parameters<br>
+                const message = urlParams.get('message');<br>
+                if (message) {<br>
+                &nbsp;&nbsp;element.textContent = message; // Safe<br>
+                }
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // ✅ SECURE: Using textContent (automatically escapes)
+        function secureTextContent() {
+            const userInput = document.getElementById('nameInput').value;
+            const output = document.getElementById('output1');
+            // SAFE: textContent automatically escapes HTML
+            output.textContent = 'Hello, ' + userInput + '!';
+        }
+
+        // ✅ SECURE: HTML encoding function
+        function escapeHtml(text) {
+            const map = {
+                '&': '&amp;',
+                '<': '&lt;',
+                '>': '&gt;',
+                '"': '&quot;',
+                "'": '&#039;'
+            };
+            return text.replace(/[&<>"']/g, m => map[m]);
+        }
+
+        function secureHTMLEncode() {
+            const userInput = document.getElementById('htmlInput').value;
+            const output = document.getElementById('output2');
+            // SAFE: Encoding HTML entities
+            output.innerHTML = escapeHtml(userInput);
+        }
+
+        // ✅ SECURE: Using DOMPurify (would need to include library)
+        function secureDOMPurify() {
+            const userInput = document.getElementById('richInput').value;
+            const output = document.getElementById('output3');
+
+            // In production, use: import DOMPurify from 'dompurify';
+            // For demo, we'll use a simple sanitizer
+            function simpleSanitize(html) {
+                const div = document.createElement('div');
+                div.textContent = html; // Strip all HTML
+                return div.textContent;
+            }
+
+            // SAFE: Sanitizing before innerHTML
+            output.innerHTML = simpleSanitize(userInput);
+        }
+
+        // ✅ SECURE: Sanitizing URL parameters
+        window.addEventListener('DOMContentLoaded', () => {
+            const urlParams = new URLSearchParams(window.location.search);
+            const message = urlParams.get('message');
+            if (message) {
+                const output = document.getElementById('output4');
+                // SAFE: Using textContent instead of innerHTML
+                output.textContent = 'Message: ' + message;
+            }
+        });
+    </script>
+</body>
+
+</html>

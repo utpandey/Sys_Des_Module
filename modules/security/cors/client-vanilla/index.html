@@ -1,0 +1,295 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CORS Demo</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #1a1a1a;
+            color: #e0e0e0;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+        }
+
+        h1 {
+            color: #4a9eff;
+            margin-bottom: 20px;
+        }
+
+        .section {
+            background: #2a2a2a;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+
+        .section h2 {
+            color: #4a9eff;
+            margin-bottom: 15px;
+        }
+
+        .info {
+            background: #1a1a1a;
+            padding: 15px;
+            border-radius: 4px;
+            margin-bottom: 15px;
+            border-left: 3px solid #4a9eff;
+        }
+
+        .success {
+            border-left-color: #4caf50;
+        }
+
+        .error {
+            border-left-color: #f44336;
+        }
+
+        .warning {
+            border-left-color: #ff9800;
+        }
+
+        button {
+            padding: 10px 20px;
+            background: #4a9eff;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            margin-right: 10px;
+            margin-bottom: 10px;
+        }
+
+        button:hover {
+            background: #3a8eef;
+        }
+
+        .output {
+            background: #1a1a1a;
+            padding: 15px;
+            border-radius: 4px;
+            margin-top: 15px;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+            white-space: pre-wrap;
+            word-break: break-all;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+
+        .code-block {
+            background: #1a1a1a;
+            padding: 15px;
+            border-radius: 4px;
+            margin-top: 15px;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+            overflow-x: auto;
+        }
+
+        .code-block code {
+            color: #4caf50;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>CORS (Cross-Origin Resource Sharing) Demo</h1>
+
+        <div class="section">
+            <h2>Understanding CORS</h2>
+            <div class="info">
+                <p><strong>What is CORS?</strong></p>
+                <p>CORS is a security mechanism that allows or restricts web pages to make requests to a different domain than the one serving the web page.</p>
+                <p><strong>Same-Origin Policy:</strong> By default, browsers block cross-origin requests for security.</p>
+            </div>
+        </div>
+
+        <div class="section">
+            <h2>Test CORS Requests</h2>
+            <div class="info success">
+                <p><strong>✅ Secure CORS Endpoint</strong></p>
+                <p>This endpoint has proper CORS configuration with whitelisted origins.</p>
+            </div>
+            <button onclick="testSecureCORS()">Test Secure CORS</button>
+            <button onclick="testSecureCORSPost()">Test Secure CORS (POST)</button>
+            <div id="secureOutput" class="output"></div>
+
+            <div class="info error" style="margin-top: 20px;">
+                <p><strong>❌ Vulnerable CORS Endpoint</strong></p>
+                <p>⚠️ This endpoint uses Access-Control-Allow-Origin: * (insecure)</p>
+            </div>
+            <button onclick="testVulnerableCORS()">Test Vulnerable CORS</button>
+            <div id="vulnerableOutput" class="output"></div>
+
+            <div class="info warning" style="margin-top: 20px;">
+                <p><strong>⚠️ No CORS Endpoint</strong></p>
+                <p>This endpoint has no CORS headers - will be blocked by browser.</p>
+            </div>
+            <button onclick="testNoCORS()">Test No CORS</button>
+            <div id="noCorsOutput" class="output"></div>
+        </div>
+
+        <div class="section">
+            <h2>CORS Headers Explained</h2>
+            <div class="code-block">
+                <code>
+// ✅ SECURE: Whitelisted origin<br>
+Access-Control-Allow-Origin: https://example.com<br>
+Access-Control-Allow-Credentials: true<br>
+Access-Control-Allow-Methods: GET, POST, PUT, DELETE<br>
+Access-Control-Allow-Headers: Content-Type, Authorization<br>
+Access-Control-Max-Age: 86400<br><br>
+// ❌ VULNERABLE: Wildcard (cannot use with credentials)<br>
+Access-Control-Allow-Origin: *<br><br>
+// ❌ MISSING: No CORS headers (browser will block)
+                </code>
+            </div>
+        </div>
+
+        <div class="section">
+            <h2>Best Practices</h2>
+            <div class="info success">
+                <h3>✅ DO's</h3>
+                <ul style="margin-left: 20px; margin-top: 10px;">
+                    <li>Whitelist specific origins</li>
+                    <li>Handle preflight OPTIONS requests</li>
+                    <li>Set appropriate allowed methods</li>
+                    <li>Use credentials only when needed</li>
+                    <li>Test CORS configuration thoroughly</li>
+                </ul>
+            </div>
+            <div class="info error">
+                <h3>❌ DON'Ts</h3>
+                <ul style="margin-left: 20px; margin-top: 10px;">
+                    <li>Don't use `*` with credentials</li>
+                    <li>Don't allow all origins in production</li>
+                    <li>Don't forget to handle preflight requests</li>
+                    <li>Don't expose sensitive headers</li>
+                    <li>Don't use credentials over HTTP</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE = 'http://localhost:4004';
+
+        function logOutput(elementId, message, isError = false) {
+            const output = document.getElementById(elementId);
+            const timestamp = new Date().toLocaleTimeString();
+            const prefix = isError ? '❌ ERROR' : '✅ SUCCESS';
+            output.textContent += `[${timestamp}] ${prefix}: ${message}\n\n`;
+            output.scrollTop = output.scrollHeight;
+        }
+
+        async function testSecureCORS() {
+            const output = document.getElementById('secureOutput');
+            output.textContent = 'Testing secure CORS...\n\n';
+            
+            try {
+                const response = await fetch(`${API_BASE}/api/data`, {
+                    method: 'GET',
+                    credentials: 'include',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                });
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    logOutput('secureOutput', JSON.stringify(data, null, 2));
+                } else {
+                    logOutput('secureOutput', `HTTP ${response.status}: ${response.statusText}`, true);
+                }
+            } catch (error) {
+                logOutput('secureOutput', error.message, true);
+            }
+        }
+
+        async function testSecureCORSPost() {
+            const output = document.getElementById('secureOutput');
+            output.textContent = 'Testing secure CORS POST...\n\n';
+            
+            try {
+                const response = await fetch(`${API_BASE}/api/data`, {
+                    method: 'POST',
+                    credentials: 'include',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ test: 'data' })
+                });
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    logOutput('secureOutput', JSON.stringify(data, null, 2));
+                } else {
+                    logOutput('secureOutput', `HTTP ${response.status}: ${response.statusText}`, true);
+                }
+            } catch (error) {
+                logOutput('secureOutput', error.message, true);
+            }
+        }
+
+        async function testVulnerableCORS() {
+            const output = document.getElementById('vulnerableOutput');
+            output.textContent = 'Testing vulnerable CORS (wildcard)...\n\n';
+            
+            try {
+                const response = await fetch(`${API_BASE}/api/vulnerable`, {
+                    method: 'GET',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                });
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    logOutput('vulnerableOutput', JSON.stringify(data, null, 2));
+                    logOutput('vulnerableOutput', '⚠️ WARNING: This endpoint uses Access-Control-Allow-Origin: *', true);
+                } else {
+                    logOutput('vulnerableOutput', `HTTP ${response.status}: ${response.statusText}`, true);
+                }
+            } catch (error) {
+                logOutput('vulnerableOutput', error.message, true);
+            }
+        }
+
+        async function testNoCORS() {
+            const output = document.getElementById('noCorsOutput');
+            output.textContent = 'Testing endpoint without CORS...\n\n';
+            
+            try {
+                const response = await fetch(`${API_BASE}/api/no-cors`, {
+                    method: 'GET',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                });
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    logOutput('noCorsOutput', JSON.stringify(data, null, 2));
+                } else {
+                    logOutput('noCorsOutput', `HTTP ${response.status}: ${response.statusText}`, true);
+                }
+            } catch (error) {
+                logOutput('noCorsOutput', error.message, true);
+                logOutput('noCorsOutput', 'This is expected - browser blocks cross-origin requests without CORS', true);
+            }
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,27 @@
+{
+  "name": "network-optimization-examples",
+  "version": "1.0.0",
+  "description": "Network Optimization examples for frontend system design",
+  "main": "server-examples.js",
+  "scripts": {
+    "start": "node server-examples.js",
+    "dev": "nodemon server-examples.js"
+  },
+  "keywords": [
+    "network-optimization",
+    "performance",
+    "caching",
+    "compression",
+    "http2",
+    "service-worker"
+  ],
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "compression": "^1.7.4",
+    "express": "^4.18.2"
+  },
+  "devDependencies": {
+    "nodemon": "^3.0.1"
+  }
+}
