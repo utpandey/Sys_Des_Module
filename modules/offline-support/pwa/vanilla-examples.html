@@ -1,0 +1,324 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>PWA Examples - Vanilla JS</title>
+
+  <!-- ✅ PWA Meta Tags -->
+  <meta name="theme-color" content="#3b82f6">
+  <meta name="description" content="Progressive Web App learning examples">
+  <link rel="manifest" href="/manifest.json">
+
+  <!-- ✅ iOS Specific Tags -->
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="PWA Demo">
+  <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png">
+
+  <style>
+    *, *::before, *::after { box-sizing: border-box; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: #0f172a; color: #e2e8f0;
+      max-width: 900px; margin: 0 auto; padding: 2rem;
+      line-height: 1.6;
+    }
+    h1 { color: #38bdf8; } h2 { color: #818cf8; margin-top: 3rem; }
+    .example { background: #1e293b; border-radius: 0.75rem; padding: 1.5rem; margin: 1rem 0; border: 1px solid #22c55e; }
+    .label { font-size: 0.75rem; font-weight: bold; text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 0.5rem; color: #22c55e; }
+    .btn { background: #3b82f6; color: white; border: none; padding: 0.75rem 1.5rem; border-radius: 0.5rem; cursor: pointer; font-size: 1rem; margin: 0.25rem; }
+    .btn:hover { background: #2563eb; }
+    .btn:focus-visible { outline: 3px solid #38bdf8; outline-offset: 2px; }
+    .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+    code { background: #334155; padding: 0.2em 0.4em; border-radius: 0.25rem; font-size: 0.9em; }
+    .status { padding: 0.5rem 1rem; border-radius: 0.5rem; margin: 0.5rem 0; font-size: 0.9rem; }
+    .status.online { background: #14532d; color: #86efac; }
+    .status.offline { background: #450a0a; color: #fca5a5; }
+
+    /* Install banner */
+    #install-banner {
+      display: none;
+      position: fixed; bottom: 1rem; left: 1rem; right: 1rem;
+      background: #1e293b; border: 2px solid #3b82f6;
+      border-radius: 1rem; padding: 1.5rem;
+      box-shadow: 0 10px 40px rgba(0,0,0,0.5);
+      z-index: 1000;
+    }
+    #install-banner.visible { display: block; }
+    #install-banner h3 { margin: 0 0 0.5rem; color: #38bdf8; }
+  </style>
+</head>
+<body>
+
+  <h1>Progressive Web App Examples</h1>
+
+  <main>
+
+    <!-- ============================================
+         1. INSTALL PROMPT
+         ============================================ -->
+    <h2>1. Custom Install Prompt</h2>
+    <div class="example">
+      <div class="label">✅ Deferred install prompt (your UI, your timing)</div>
+      <button class="btn" id="show-install" disabled>
+        📱 Install App
+      </button>
+      <p id="install-status" style="margin-top:0.5rem;color:#94a3b8;font-size:0.9rem;">
+        Checking installability...
+      </p>
+    </div>
+
+    <!-- Custom install banner -->
+    <div id="install-banner" role="alert">
+      <h3>📱 Install This App</h3>
+      <p style="color:#94a3b8;margin:0 0 1rem;">Get quick access from your home screen. Works offline!</p>
+      <div style="display:flex;gap:0.5rem;">
+        <button class="btn" id="install-accept">Install</button>
+        <button class="btn" id="install-dismiss" style="background:transparent;border:1px solid #475569;">Not Now</button>
+      </div>
+    </div>
+
+
+    <!-- ============================================
+         2. ONLINE/OFFLINE STATUS
+         ============================================ -->
+    <h2>2. Connection Status</h2>
+    <div class="example">
+      <div class="label">✅ Real-time online/offline detection</div>
+      <div id="connection-status" class="status online">
+        🟢 Online
+      </div>
+      <p style="font-size:0.85rem;color:#94a3b8;margin-top:0.5rem;">
+        Test: Chrome DevTools → Network → Offline checkbox
+      </p>
+    </div>
+
+
+    <!-- ============================================
+         3. DISPLAY MODE DETECTION
+         ============================================ -->
+    <h2>3. Display Mode Detection</h2>
+    <div class="example">
+      <div class="label">✅ Detect if running as installed PWA</div>
+      <div id="display-mode" style="font-size:0.9rem;"></div>
+    </div>
+
+
+    <!-- ============================================
+         4. CACHE STATUS
+         ============================================ -->
+    <h2>4. Storage & Cache Info</h2>
+    <div class="example">
+      <div class="label">✅ Check storage usage and cache contents</div>
+      <button class="btn" id="check-storage">Check Storage</button>
+      <div id="storage-info" style="margin-top:0.5rem;font-family:monospace;font-size:0.85rem;color:#94a3b8;"></div>
+    </div>
+
+
+    <!-- ============================================
+         5. PUSH NOTIFICATION
+         ============================================ -->
+    <h2>5. Push Notifications</h2>
+    <div class="example">
+      <div class="label">✅ Request permission and send notification</div>
+      <button class="btn" id="request-notif">Request Permission</button>
+      <button class="btn" id="send-notif" disabled>Send Test Notification</button>
+      <div id="notif-status" style="margin-top:0.5rem;color:#94a3b8;font-size:0.9rem;"></div>
+    </div>
+
+  </main>
+
+  <script>
+    /* ============================================
+       1. Install Prompt
+       ============================================ */
+    let deferredPrompt = null;
+    const showInstallBtn = document.getElementById('show-install');
+    const installStatus = document.getElementById('install-status');
+    const installBanner = document.getElementById('install-banner');
+
+    // Intercept the browser's install prompt
+    window.addEventListener('beforeinstallprompt', (e) => {
+      e.preventDefault(); // Don't show browser's default prompt
+      deferredPrompt = e;
+
+      showInstallBtn.disabled = false;
+      installStatus.textContent = '✅ App is installable!';
+
+      // Show custom banner after 30 seconds
+      setTimeout(() => {
+        if (deferredPrompt) {
+          installBanner.classList.add('visible');
+        }
+      }, 30000);
+    });
+
+    // Show install prompt
+    async function triggerInstall() {
+      if (!deferredPrompt) return;
+
+      deferredPrompt.prompt();
+      const { outcome } = await deferredPrompt.userChoice;
+
+      if (outcome === 'accepted') {
+        installStatus.textContent = '🎉 App installed!';
+        console.log('User accepted install');
+      } else {
+        installStatus.textContent = 'Install dismissed. You can try again later.';
+        console.log('User dismissed install');
+      }
+
+      deferredPrompt = null;
+      showInstallBtn.disabled = true;
+      installBanner.classList.remove('visible');
+    }
+
+    showInstallBtn.addEventListener('click', triggerInstall);
+    document.getElementById('install-accept')?.addEventListener('click', triggerInstall);
+    document.getElementById('install-dismiss')?.addEventListener('click', () => {
+      installBanner.classList.remove('visible');
+    });
+
+    // Detect when app is installed
+    window.addEventListener('appinstalled', () => {
+      installStatus.textContent = '🎉 App successfully installed!';
+      installBanner.classList.remove('visible');
+      deferredPrompt = null;
+    });
+
+    // Check if already in standalone mode
+    if (window.matchMedia('(display-mode: standalone)').matches) {
+      installStatus.textContent = '📱 Running as installed PWA';
+      showInstallBtn.disabled = true;
+    }
+
+
+    /* ============================================
+       2. Connection Status
+       ============================================ */
+    const statusEl = document.getElementById('connection-status');
+
+    function updateStatus() {
+      if (navigator.onLine) {
+        statusEl.textContent = '🟢 Online';
+        statusEl.className = 'status online';
+      } else {
+        statusEl.textContent = '🔴 Offline — cached content available';
+        statusEl.className = 'status offline';
+      }
+    }
+
+    window.addEventListener('online', updateStatus);
+    window.addEventListener('offline', updateStatus);
+    updateStatus();
+
+
+    /* ============================================
+       3. Display Mode Detection
+       ============================================ */
+    const displayModeEl = document.getElementById('display-mode');
+    const modes = ['standalone', 'minimal-ui', 'fullscreen', 'browser'];
+
+    function detectDisplayMode() {
+      for (const mode of modes) {
+        if (window.matchMedia(`(display-mode: ${mode})`).matches) {
+          displayModeEl.innerHTML = `
+            <strong>Current mode:</strong> <code>${mode}</code><br>
+            <span style="color:#94a3b8;">
+              ${mode === 'standalone' ? '📱 Running as installed PWA' :
+                mode === 'browser' ? '🌐 Running in browser tab' :
+                `Running in ${mode} mode`}
+            </span>
+          `;
+          return;
+        }
+      }
+      displayModeEl.textContent = 'Display mode: unknown';
+    }
+
+    // Also detect iOS standalone
+    if (window.navigator.standalone === true) {
+      displayModeEl.innerHTML = '<strong>Current mode:</strong> <code>standalone (iOS)</code>';
+    } else {
+      detectDisplayMode();
+    }
+
+
+    /* ============================================
+       4. Storage Info
+       ============================================ */
+    document.getElementById('check-storage').addEventListener('click', async () => {
+      const infoEl = document.getElementById('storage-info');
+      const lines = [];
+
+      // Storage estimate
+      if ('storage' in navigator && 'estimate' in navigator.storage) {
+        const { usage, quota } = await navigator.storage.estimate();
+        const usageMB = (usage / (1024 * 1024)).toFixed(2);
+        const quotaMB = (quota / (1024 * 1024)).toFixed(0);
+        const percent = ((usage / quota) * 100).toFixed(1);
+        lines.push(`Storage: ${usageMB} MB / ${quotaMB} MB (${percent}%)`);
+      }
+
+      // Cache names and sizes
+      if ('caches' in window) {
+        const keys = await caches.keys();
+        lines.push(`Caches: ${keys.length} (${keys.join(', ') || 'none'})`);
+
+        for (const key of keys) {
+          const cache = await caches.open(key);
+          const requests = await cache.keys();
+          lines.push(`  └─ ${key}: ${requests.length} entries`);
+        }
+      }
+
+      // SW status
+      if ('serviceWorker' in navigator) {
+        const reg = await navigator.serviceWorker.getRegistration();
+        lines.push(`Service Worker: ${reg ? (reg.active ? 'Active ✅' : 'Registered') : 'Not registered'}`);
+      }
+
+      infoEl.innerHTML = lines.join('<br>');
+    });
+
+
+    /* ============================================
+       5. Push Notifications
+       ============================================ */
+    const requestBtn = document.getElementById('request-notif');
+    const sendBtn = document.getElementById('send-notif');
+    const notifStatus = document.getElementById('notif-status');
+
+    requestBtn.addEventListener('click', async () => {
+      if (!('Notification' in window)) {
+        notifStatus.textContent = '❌ Notifications not supported';
+        return;
+      }
+
+      const permission = await Notification.requestPermission();
+      notifStatus.textContent = `Permission: ${permission}`;
+
+      if (permission === 'granted') {
+        sendBtn.disabled = false;
+      }
+    });
+
+    sendBtn.addEventListener('click', async () => {
+      const reg = await navigator.serviceWorker.getRegistration();
+      if (reg) {
+        reg.showNotification('PWA Demo', {
+          body: 'This is a test push notification!',
+          icon: '/icons/icon-192.png',
+          badge: '/icons/badge-72.png',
+          tag: 'test',
+          actions: [
+            { action: 'open', title: 'Open App' },
+            { action: 'dismiss', title: 'Dismiss' },
+          ],
+        });
+      }
+    });
+  </script>
+</body>
+</html>
